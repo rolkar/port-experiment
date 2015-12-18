@@ -1,4 +1,6 @@
-all : e.out e.beam gen_e.beam
+DST = e.out e.beam gen_e.beam
+
+all : $(DST)
 
 e.out:
 	gcc -Wall -o e.out e.c
@@ -11,3 +13,6 @@ gen_e.beam:
 
 test:
 	echo "gen_e:start(), gen_e:stop(), init:stop()." | erl
+
+clean:
+	rm $(DST)
