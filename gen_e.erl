@@ -42,6 +42,7 @@ stop() ->
     flush(),
     Res = (catch gen_server:call(?SERVER, stop)),
     io:format("~p: Res = ~p~n", [self(), Res]),
+    timer:sleep(?TIMEOUT),
     flush(),
     ok.
 
@@ -77,6 +78,7 @@ command(C) ->
     flush(),
     Res = (catch gen_server:call(?SERVER, {command, C})),
     io:format("~p: Res = ~p~n", [self(), Res]),
+    timer:sleep(?TIMEOUT),
     flush(),
     ok.
 
@@ -135,6 +137,7 @@ handle_info(Info, State) ->
 terminate(Reason, _State) ->
     io:format("~p: The port handler terminates with reason: ~p~n",
               [self(), Reason]),
+    timer:sleep(?TIMEOUT),
     flush(),
     ok.
 
