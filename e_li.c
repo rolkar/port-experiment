@@ -1,8 +1,8 @@
-/* e.c */
+/* e_li.c */
 
 /* An experimental code for testing port behaviours, in particular
    detecting that a port goes down or are taken down.  Uses the Erlang
-   module files e.erl or gen_e.erl. The standalone version. */
+   module files e.erl or gen_e.erl. The linkedin version. */
 
 #include <sys/types.h>
 #include <sys/uio.h>

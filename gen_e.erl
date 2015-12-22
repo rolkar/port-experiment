@@ -1,5 +1,13 @@
 -module(gen_e).
 
+%% An experimental module for testing port behaviours, in particular
+%% detecting that a port goes down or are taken down.
+
+%% Uses the c file e.c for stand alone program driver and e_li.c for
+%% the linked in version.
+
+% Gen server version
+
 -behaviour(gen_server).
 
 %% API
