@@ -2,13 +2,15 @@
 
 /* An experimental code for testing port behaviours, in particular
    detecting that a port goes down or are taken down.  Uses the Erlang
-   module files e.erl or gen_e.erl. The linkedin version. */
+   module files e.erl or gen_e.erl. The linked in version. */
+
+#include "erl_driver.h"
 
 #include <sys/types.h>
 #include <sys/uio.h>
 #include <unistd.h>
 #include <stdlib.h>
-
+#include <stdio.h>
 
 #define SET 1
 #define GET 2
@@ -18,53 +20,7 @@
 
 typedef unsigned char byte;
 
-static int value = 0;
-
-static int read_exact(byte *buf, int len)
-{
-  int i, got=0;
-
-  do {
-    if ((i = read(0, buf+got, len-got)) <= 0)
-      return(i);
-    got += i;
-  } while (got<len);
-
-  return(len);
-}
-
-static int write_exact(byte *buf, int len)
-{
-  int i, wrote = 0;
-
-  do {
-    if ((i = write(1, buf+wrote, len-wrote)) <= 0)
-      return (i);
-    wrote += i;
-  } while (wrote<len);
-
-  return (len);
-}
-
-static int read_cmd(byte *buf)
-{
-  int len;
-
-  if (read_exact(buf, 1) != 1)
-    return(-1);
-  len = buf[0];
-  return read_exact(buf, len);
-}
-
-static int write_cmd(byte *buf, int len)
-{
-  byte li;
-
-  li = len;
-  write_exact(&li, 1);
-
-  return write_exact(buf, len);
-}
+static int value = 100;
 
 static int set(int v)
 {
@@ -93,37 +49,91 @@ static int crash(char *NullPtr)
   return 1;
 }
 
-int main()
+
+typedef struct {
+  ErlDrvPort port;
+} e_data;
+
+static ErlDrvData e_li_start(ErlDrvPort port, char *buff)
 {
-  byte buf[100];
+  e_data *d = (e_data *)driver_alloc(sizeof(e_data));
+  fprintf(stderr, "Starting linked in C driver\n");
+  d->port = port;
+  return (ErlDrvData)d;
+}
 
-  while (read_cmd(buf) > 0) {
-    int res;
 
-    int fn = buf[0];
-    
-    if (fn == SET) {
-      int arg = buf[1];
-      res = set(arg);
-    } else if (fn == GET) {
-      res = get();
-    } else if (fn == INC) {
-      int arg = buf[1];
-      res = inc(arg);
-    } else if (fn == CRASH) {
-      res = crash(NULL);
-    } else if (fn == EXIT) {
-      int arg = buf[1];
-      res = 0; /* dummy */
-      exit(arg);
-    } else {
-      res = 42;
-    }
+static void e_li_stop(ErlDrvData handle)
+{
+  fprintf(stderr, "Stopping linked in C driver\n");
+  driver_free((char*)handle);
+}
 
-    buf[0] = res;
-    write_cmd(buf, 1);
+static void e_li_output(ErlDrvData handle,
+                         char *buf, 
+                         ErlDrvSizeT bufflen)
+{
+  e_data *d = ((e_data *)handle);
+  char res;
+  int fn = buf[0];
 
+  if (fn == SET) {
+    int arg = buf[1];
+    res = set(arg);
+  } else if (fn == GET) {
+    res = get();
+  } else if (fn == INC) {
+    int arg = buf[1];
+    res = inc(arg);
+  } else if (fn == CRASH) {
+    res = crash(NULL);
+  } else if (fn == EXIT) {
+    int arg = buf[1];
+    res = 0; /* dummy */
+    exit(arg);
+  } else {
+    res = 42;
   }
 
-  return 0;
+  driver_output(d->port, &res, 1);
+}
+
+ErlDrvEntry e_li_entry = {
+  NULL,			/* F_PTR init, called when driver is loaded */
+  e_li_start,		/* L_PTR start, called when port is opened */
+  e_li_stop,		/* F_PTR stop, called when port is closed */
+  e_li_output,		/* F_PTR output, called when erlang has sent */
+  NULL,			/* F_PTR ready_input, called when input descriptor ready */
+  NULL,			/* F_PTR ready_output, called when output descriptor ready */
+  "e_li",		/* char *driver_name, the argument to open_port */
+  NULL,			/* F_PTR finish, called when unloaded */
+  NULL,			/* void *handle, Reserved by VM */
+  NULL,			/* F_PTR control, port_command callback */
+  NULL,			/* F_PTR timeout, reserved */
+  NULL,			/* F_PTR outputv, reserved */
+  NULL,			/* F_PTR ready_async, only for async drivers */
+  NULL,			/* F_PTR flush, called when port is about 
+                           to be closed, but there is data in driver 
+                           queue */
+  NULL,                 /* F_PTR call, much like control, sync call
+                           to driver */
+  NULL,                 /* F_PTR event, called when an event selected 
+                           by driver_event() occurs. */
+  ERL_DRV_EXTENDED_MARKER,        /* int extended marker, Should always be 
+                                     set to indicate driver versioning */
+  ERL_DRV_EXTENDED_MAJOR_VERSION, /* int major_version, should always be 
+                                     set to this value */
+  ERL_DRV_EXTENDED_MINOR_VERSION, /* int minor_version, should always be 
+                                     set to this value */
+  0,                          /* int driver_flags, see documentation */
+  NULL,                       /* void *handle2, reserved for VM use */
+  NULL,                       /* F_PTR process_exit, called when a 
+                                 monitored process dies */
+  NULL                        /* F_PTR stop_select, called to close an 
+                                 event object */
+};
+
+DRIVER_INIT(e_li)
+{
+  return &e_li_entry;
 }

@@ -38,7 +38,26 @@ start() ->
     start([]).
 
 start(Args) ->
-    case gen_server:start({local, ?SERVER}, ?MODULE, Args, []) of
+    Type = proplists:get_value(type, Args, standalone),
+    {ok, File} =
+        case Type of
+            standalone ->
+                {ok, "./e.out"};
+            linkedin ->
+                F = "e_li",
+                case erl_ddll:load_driver(".", F) of
+                    ok ->
+                        io:format("Driver loaded~n"),
+                        {ok, F};
+                    {error, already_loaded} ->
+                        io:format("Driver already loaded~n"),
+                        {ok, F};
+                    {error, Reason} ->
+                        io:format("Could not load driver (~p)~n", [Reason]),
+                        {error, could_not_load_driver}
+                end
+        end,
+    case gen_server:start({local, ?SERVER}, ?MODULE, [{file,File} | Args], []) of
         Reply = {ok, _} ->
             monitor(process, ?SERVER),
             Reply;
@@ -97,10 +116,12 @@ command(C) ->
 init(Args) ->
     TrapExit = proplists:get_value(trap_exit, Args, true),
     Params = proplists:get_value(params, Args, [exit_status]),
-    File = proplists:get_value(file, Args, "./e.out"),
+    Type = proplists:get_value(type, Args, standalone),
+    File = proplists:get_value(file, Args, should_never_happen),
 
     io:format("TrapExit = ~p~n", [TrapExit]),
     io:format("Params = ~p~n", [Params]),
+    io:format("Type = ~p~n", [Type]),
     io:format("File = ~p~n", [File]),
 
     process_flag(trap_exit, TrapExit),

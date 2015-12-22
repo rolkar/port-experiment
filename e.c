@@ -8,6 +8,7 @@
 #include <sys/uio.h>
 #include <unistd.h>
 #include <stdlib.h>
+#include <stdio.h>
 
 
 #define SET 1
@@ -97,6 +98,8 @@ int main()
 {
   byte buf[100];
 
+  fprintf(stderr, "Starting external C driver\n");
+
   while (read_cmd(buf) > 0) {
     int res;
 
@@ -124,6 +127,8 @@ int main()
     write_cmd(buf, 1);
 
   }
+
+  fprintf(stderr, "Stopping external C driver\n");
 
   return 0;
 }
