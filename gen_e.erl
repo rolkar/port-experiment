@@ -45,7 +45,7 @@ start(Args) ->
                 {ok, "./e.out"};
             linkedin ->
                 F = "e_li",
-                case erl_ddll:load_driver(".", F) of
+                case erl_ddll:load(".", F) of
                     ok ->
                         io:format("Driver loaded~n"),
                         {ok, F};
@@ -115,7 +115,7 @@ command(C) ->
 
 init(Args) ->
     TrapExit = proplists:get_value(trap_exit, Args, true),
-    Params = proplists:get_value(params, Args, [exit_status]),
+    Params = proplists:get_value(params, Args, []),
     Type = proplists:get_value(type, Args, standalone),
     File = proplists:get_value(file, Args, should_never_happen),
 

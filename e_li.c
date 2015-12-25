@@ -98,7 +98,7 @@ static void e_li_output(ErlDrvData handle,
   driver_output(d->port, &res, 1);
 }
 
-ErlDrvEntry e_li_entry = {
+static ErlDrvEntry e_li_entry = {
   NULL,			/* F_PTR init, called when driver is loaded */
   e_li_start,		/* L_PTR start, called when port is opened */
   e_li_stop,		/* F_PTR stop, called when port is closed */
@@ -135,5 +135,6 @@ ErlDrvEntry e_li_entry = {
 
 DRIVER_INIT(e_li)
 {
+  fprintf(stderr, "Init linked in C driver\n");
   return &e_li_entry;
 }
