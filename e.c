@@ -10,16 +10,11 @@
 #include <stdlib.h>
 #include <stdio.h>
 
-
-#define SET 1
-#define GET 2
-#define INC 3
-#define CRASH 4
-#define EXIT 5
+#include "e_store.h"
 
 typedef unsigned char byte;
 
-static int value = 0;
+int e_value = 0;
 
 static int read_exact(byte *buf, int len)
 {
@@ -67,32 +62,6 @@ static int write_cmd(byte *buf, int len)
   return write_exact(buf, len);
 }
 
-static int set(int v)
-{
-  int old_v = value;
-  value = v;
-
-  return old_v;
-}
-
-static int get()
-{
-  return value;
-}
-
-static int inc(int v)
-{
-  int old_v = value;
-  value += v;
-
-  return old_v;
-}
-
-static int crash(char *NullPtr)
-{
-  *NullPtr = 0;
-  return 1;
-}
 
 int main()
 {
@@ -107,14 +76,14 @@ int main()
     
     if (fn == SET) {
       int arg = buf[1];
-      res = set(arg);
+      res = e_set(arg);
     } else if (fn == GET) {
-      res = get();
+      res = e_get();
     } else if (fn == INC) {
       int arg = buf[1];
-      res = inc(arg);
+      res = e_inc(arg);
     } else if (fn == CRASH) {
-      res = crash(NULL);
+      res = e_crash(NULL);
     } else if (fn == EXIT) {
       int arg = buf[1];
       res = 0; /* dummy */

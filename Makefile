@@ -25,15 +25,21 @@ DST = e.out e_li.so gen_e.beam
 
 all : $(DST)
 
-e.out: e.c
-	gcc -Wall -o e.out e.c
+e.out: e.c e_store.o
+	gcc -Wall -o e.out e.c e_store.o
+
+e_store.o: e_store.c
+	gcc -Wall -c -o e_store.o e_store.c
+
+e_store_li.o: e_store.c
+	gcc -Wall $(CompSW) -c -o e_store_li.o e_store.c
 
 e_li.o: e_li.c
-	gcc -Wall $(CompSW) -o e_li.o -c e_li.c -I \
-	/usr/local/lib/erlang/erts*/include
+	gcc -Wall $(CompSW) -o e_li.o -c e_li.c \
+        -I /usr/local/lib/erlang/erts*/include
 
-e_li.so: e_li.o
-	gcc $(LinkSW) -o e_li.so e_li.o
+e_li.so: e_li.o e_store_li.o
+	gcc $(LinkSW) -o e_li.so e_li.o e_store_li.o
 
 gen_e.beam: gen_e.erl
 	erlc -o gen_e.beam gen_e.erl
